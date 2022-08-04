@@ -42,6 +42,11 @@ php_sh: ## Open bash in php container
 	@$(EXEC) php bash
 
 
+## —— Test ————————————————————————————————————————————————————————————————————————
+test: phpunit.xml ## Test application
+	@$(EXEC) php vendor/bin/phpunit
+
+
 ## —— Dependencies ————————————————————————————————————————————————————————————————
 
 # Internal rules
