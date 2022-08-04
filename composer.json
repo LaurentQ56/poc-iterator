@@ -1,0 +1,28 @@
+{
+    "name": "laurentq56/iterator",
+    "description": "POC du pattern iterator",
+    "type": "project",
+    "license": "MIT",
+    "autoload": {
+        "psr-4": {
+            "POCIterator\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Tests\\": "tests/"
+        }
+    },
+    "authors": [
+        {
+            "name": "LaurentQ56",
+            "email": "info@developpement-interessant.com"
+        }
+    ],
+    "minimum-stability": "stable",
+    "require": {},
+    "require-dev": {
+        "symfony/var-dumper": "^5.4",
+        "phpunit/phpunit": "^9.5"
+    }
+}
