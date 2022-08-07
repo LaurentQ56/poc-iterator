@@ -190,4 +190,45 @@ final class PeopleCollectionTest extends TestCase
         self::assertEquals(14, $current->left());
         self::assertEquals(13, $iterator->key());
     }
+
+    public function testPeopleCollectionGetIteratorBySibling(): void
+    {
+        // Arrange
+        $iterator = $this->collection->getIterator();
+
+        // Act && Assert
+        $current = $iterator->current();
+        self::assertEquals('parent0', $current->slug());
+        self::assertEquals(1, $current->level());
+        self::assertEquals(1, $current->left());
+        self::assertEquals(0, $iterator->key());
+        $iterator->next();
+        $current = $iterator->current();
+        self::assertEquals('parent1', $current->slug());
+        self::assertEquals(1, $current->level());
+        self::assertEquals(14, $current->left());
+        self::assertEquals(1, $iterator->key());
+        for ($i = 0; $i < 9; $i++){
+            $iterator->next();
+        }
+        $current = $iterator->current();
+        self::assertEquals('parent0-child0-grandchild0', $current->slug());
+        self::assertEquals(3, $current->level());
+        self::assertEquals(3, $current->left());
+        self::assertEquals(10, $iterator->key());
+        $iterator->rewind();
+        $current = $iterator->current();
+        self::assertEquals('parent1-child3', $current->slug());
+        self::assertEquals(2, $current->level());
+        self::assertEquals(24, $current->left());
+        self::assertEquals(9, $iterator->key());
+        for ($i = 0; $i < 8; $i++){
+            $iterator->rewind();
+        }
+        $current = $iterator->current();
+        self::assertEquals('parent1', $current->slug());
+        self::assertEquals(1, $current->level());
+        self::assertEquals(14, $current->left());
+        self::assertEquals(1, $iterator->key());
+    }
 }

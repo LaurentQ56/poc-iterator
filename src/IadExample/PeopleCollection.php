@@ -41,7 +41,7 @@ final class PeopleCollection implements \IteratorAggregate
      */
     public function getByLevel(int $level): array
     {
-        $levelItems = array_filter($this->items, static function (People $people) use ($level) {
+        $levelItems = array_filter($this->buildFlatArray(), static function (People $people) use ($level) {
             return $people->level() === $level;
         });
 
