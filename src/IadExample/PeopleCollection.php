@@ -1,14 +1,18 @@
 <?php
 
+declare(strict_types=1);
+
 namespace POCIterator\IadExample;
 
 final class PeopleCollection implements \IteratorAggregate
 {
     /** @var People[] */
     private array $items = [];
+    private int $left = 0;
 
     public function addItem(People $item): self
     {
+        $this->left = $item->updateLeft(++$this->left);
         $this->items[] = $item;
 
         return $this;
@@ -24,7 +28,7 @@ final class PeopleCollection implements \IteratorAggregate
 
     public function getIterator(): \Iterator
     {
-        // TODO: Implement getIterator() method.
+        return new PeopleIterator($this);
     }
 
     public function getIteratorDown(): \Iterator
@@ -37,28 +41,60 @@ final class PeopleCollection implements \IteratorAggregate
      */
     public function getByLevel(int $level): array
     {
-        $levelItems = array_map(static function (People $people) use ($level) {
-            return $people->getLevel() === $level;
-        }, $this->items);
+        $levelItems = array_filter($this->items, static function (People $people) use ($level) {
+            return $people->level() === $level;
+        });
 
-        usort($levelItems, static function (People $itemA, People $itemB) {
-            return $itemA->getLeft() - $itemB->getLeft();
+        usort($levelItems, static function (People $peopleA, People $peopleB) {
+            return $peopleA->left() - $peopleB->left();
         });
 
         return $levelItems;
     }
 
+    /**
+     * @return People[]
+     */
+    public function getByLeft(int $left): array
+    {
+        $leftItems = array_filter($this->items, static function (People $people) use ($left) {
+            return $people->left() === $left;
+        });
+
+        usort($leftItems, static function (People $peopleA, People $peopleB) {
+            return $peopleA->level() - $peopleB->level();
+        });
+
+        return $leftItems;
+    }
+
     public function getItem(int $level, int $left): People
     {
-        return array_reduce($this->items, static function (People $people) use ($level, $left) {
-            return $people->getLevel() === $level && $people->getLeft() === $left;
+        $item = array_filter($this->buildFlatArray(), static function (People $people) use ($level, $left) {
+            return $people->level() === $level && $people->left() === $left;
         });
+
+        return array_values($item)[0];
+    }
+
+    public function getTree(): array
+    {
+        $tree = [];
+        foreach ($this->items as $keyTree => $item) {
+            $tree[$keyTree]['username'] = $item->username();
+            $tree[$keyTree]['slug'] = $item->slug();
+            if (0 < count($item->children())) {
+                $tree[$keyTree]['children'] = $this->getChildrenTree($item->children());
+            }
+        }
+
+        return $tree;
     }
 
     public function levelIsValid(int $level): bool
     {
         foreach ($this->items as $item) {
-            $return = $item->getLevel() === $level;
+            $return = $item->level() === $level;
             if (true === $return) {
                 return true;
             }
@@ -71,7 +107,7 @@ final class PeopleCollection implements \IteratorAggregate
     {
         if (true === $this->levelIsValid($level)) {
             foreach ($this->items as $item) {
-                $return = $item->getLeft() === $left;
+                $return = $item->left() === $left;
                 if (true === $return) {
                     return true;
                 }
@@ -79,5 +115,51 @@ final class PeopleCollection implements \IteratorAggregate
         }
 
         return false;
+    }
+
+    private function buildFlatArray(): array
+    {
+        $planArray = [];
+        foreach ($this->items as $item) {
+            if (0 < count($item->children())) {
+                $planArray = array_reverse($this->getChildren($item->children(), $planArray));
+            }
+            $planArray[] = $item;
+        }
+
+        return $planArray;
+    }
+
+    /**
+     * @param People[] $children
+     */
+    private function getChildren(array $children, array $globalArray): array
+    {
+        foreach ($children as $child) {
+            if (0 < count($child->children())) {
+                $globalArray = $this->getChildren($child->children(), $globalArray);
+            }
+
+            $globalArray[] = $child;
+        }
+
+        return array_reverse($globalArray);
+    }
+
+    /**
+     * @param People[] $children
+     */
+    public function getChildrenTree(array $children): array
+    {
+        $tree = [];
+        foreach ($children as $keyChild => $child) {
+            $tree[$keyChild]['username'] = $child->username();
+            $tree[$keyChild]['slug'] = $child->slug();
+            if (0 < count($child->children())) {
+                $tree[$keyChild]['children'] = $this->getChildrenTree($child->children());
+            }
+        }
+
+        return $tree;
     }
 }

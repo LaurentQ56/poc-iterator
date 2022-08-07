@@ -1,11 +1,13 @@
 <?php
 
+declare(strict_types=1);
+
 namespace POCIterator\IadExample;
 
 final class DownIterator implements \Iterator
 {
     private PeopleCollection $collection;
-    private int $level = 0;
+    private int $level = 1;
     private int $left = 1;
     private int $position = 0;
 
@@ -22,14 +24,30 @@ final class DownIterator implements \Iterator
     public function next(): void
     {
         $current = $this->current();
-        $siblings = $this->collection->getByLevel($current->getLevel());
-        if ($siblings[count($siblings) -1]->getLeft() === $this->left) {
-            $this->left = 1;
-            $this->level++;
-        } else {
-            $this->left = $current->getLeft() + 1;
-        }
+        $parent = $current->parent();
         $this->position++;
+        $this->left++;
+
+        if (0 < count($current->children())) {
+            $this->level++;
+        } elseif (null !== $parent && 0 < count($parent->children())) {
+            $last = count($parent->children()) - 1;
+            $lastSibling = $parent->children()[$last];
+            $grandParent = $parent->parent();
+
+            if ($lastSibling->left() < $this->left) {
+                $this->level--;
+
+                if (null !== $grandParent && 0 < count($grandParent->children())) {
+                    $lastParentChildren = count($grandParent->children()) - 1;
+                    $lastParentSibling = $grandParent->children()[$lastParentChildren];
+
+                    if ($lastParentSibling->left() < $this->left) {
+                        $this->level--;
+                    }
+                }
+            }
+        }
     }
 
     public function key(): int
@@ -42,8 +60,15 @@ final class DownIterator implements \Iterator
         return $this->collection->leftIsValid($this->level, $this->left);
     }
 
-    public function rewind(): int
+    public function rewind(): void
     {
-        // TODO: Implement rewind() method.
+        $current = $this->current();
+        $this->left--;
+
+        if (null !== $current->parent()) {
+            $this->level--;
+        }
+
+        $this->position--;
     }
 }
